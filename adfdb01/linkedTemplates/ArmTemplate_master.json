@@ -1,0 +1,146 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"type": "string",
+			"metadata": "Data Factory name",
+			"defaultValue": "adfdb01"
+		},
+		"AzureSqlDatabase1_password": {
+			"type": "secureString",
+			"metadata": "Secure string for 'password' of 'AzureSqlDatabase1'"
+		},
+		"ls_data_link_accountKey": {
+			"type": "secureString",
+			"metadata": "Secure string for 'accountKey' of 'ls_data_link'"
+		},
+		"ls_dl_zipfile_accountKey": {
+			"type": "secureString",
+			"metadata": "Secure string for 'accountKey' of 'ls_dl_zipfile'"
+		},
+		"AzureSqlDatabase1_properties_typeProperties_server": {
+			"type": "string",
+			"defaultValue": "dbservervenky.database.windows.net"
+		},
+		"AzureSqlDatabase1_properties_typeProperties_database": {
+			"type": "string",
+			"defaultValue": "rs_db"
+		},
+		"AzureSqlDatabase1_properties_typeProperties_userName": {
+			"type": "string",
+			"defaultValue": "venky"
+		},
+		"ls__hs_keyvalue_properties_typeProperties_baseUrl": {
+			"type": "string",
+			"defaultValue": "https://rvk.vault.azure.net/"
+		},
+		"ls_data_link_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://rssource.dfs.core.windows.net/"
+		},
+		"ls_dl_zipfile_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://rssource.dfs.core.windows.net/"
+		},
+		"ls_hd_storageaccount_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://hdcluserstorage.dfs.core.windows.net/"
+		},
+		"ls_http_fetch_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "@{linkedService().ls_basepath}"
+		},
+		"ls_rest_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://pokeapi.co/api/v2/pokemon"
+		},
+		"containerUri": {
+			"type": "string",
+			"metadata": "URI to storage account containing linked ARM templates"
+		},
+		"containerSasToken": {
+			"type": "string",
+			"metadata": "Sas token to storage account containing linked ARM templates"
+		}
+	},
+	"variables": {
+		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+	},
+	"resources": [
+		{
+			"name": "adfdb01_ArmTemplate_0",
+			"type": "Microsoft.Resources/deployments",
+			"apiVersion": "2024-03-01",
+			"properties": {
+				"mode": "incremental",
+				"templateLink": {
+					"uri": "[concat(parameters('containerUri'), '/ArmTemplate_0.json', parameters('containerSasToken'))]",
+					"contentVersion": "1.0.0.0"
+				},
+				"parameters": {
+					"factoryName": {
+						"value": "[parameters('factoryName')]"
+					},
+					"AzureSqlDatabase1_password": {
+						"value": "[parameters('AzureSqlDatabase1_password')]"
+					},
+					"ls_data_link_accountKey": {
+						"value": "[parameters('ls_data_link_accountKey')]"
+					},
+					"ls_dl_zipfile_accountKey": {
+						"value": "[parameters('ls_dl_zipfile_accountKey')]"
+					},
+					"AzureSqlDatabase1_properties_typeProperties_server": {
+						"value": "[parameters('AzureSqlDatabase1_properties_typeProperties_server')]"
+					},
+					"AzureSqlDatabase1_properties_typeProperties_database": {
+						"value": "[parameters('AzureSqlDatabase1_properties_typeProperties_database')]"
+					},
+					"AzureSqlDatabase1_properties_typeProperties_userName": {
+						"value": "[parameters('AzureSqlDatabase1_properties_typeProperties_userName')]"
+					},
+					"ls__hs_keyvalue_properties_typeProperties_baseUrl": {
+						"value": "[parameters('ls__hs_keyvalue_properties_typeProperties_baseUrl')]"
+					},
+					"ls_data_link_properties_typeProperties_url": {
+						"value": "[parameters('ls_data_link_properties_typeProperties_url')]"
+					},
+					"ls_dl_zipfile_properties_typeProperties_url": {
+						"value": "[parameters('ls_dl_zipfile_properties_typeProperties_url')]"
+					},
+					"ls_http_fetch_properties_typeProperties_url": {
+						"value": "[parameters('ls_http_fetch_properties_typeProperties_url')]"
+					},
+					"ls_rest_properties_typeProperties_url": {
+						"value": "[parameters('ls_rest_properties_typeProperties_url')]"
+					},
+					"ls_hd_storageaccount_properties_typeProperties_url": {
+						"value": "[parameters('ls_hd_storageaccount_properties_typeProperties_url')]"
+					}
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "adfdb01_ArmTemplate_1",
+			"type": "Microsoft.Resources/deployments",
+			"apiVersion": "2024-03-01",
+			"properties": {
+				"mode": "incremental",
+				"templateLink": {
+					"uri": "[concat(parameters('containerUri'), '/ArmTemplate_1.json', parameters('containerSasToken'))]",
+					"contentVersion": "1.0.0.0"
+				},
+				"parameters": {
+					"factoryName": {
+						"value": "[parameters('factoryName')]"
+					}
+				}
+			},
+			"dependsOn": [
+				"[resourceId('Microsoft.Resources/deployments', 'adfdb01_ArmTemplate_0')]"
+			]
+		}
+	]
+}

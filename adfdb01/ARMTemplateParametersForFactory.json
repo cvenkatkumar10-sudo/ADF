@@ -1,0 +1,45 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"value": "adfdb01"
+		},
+		"AzureSqlDatabase1_password": {
+			"value": ""
+		},
+		"ls_data_link_accountKey": {
+			"value": ""
+		},
+		"ls_dl_zipfile_accountKey": {
+			"value": ""
+		},
+		"AzureSqlDatabase1_properties_typeProperties_server": {
+			"value": "dbservervenky.database.windows.net"
+		},
+		"AzureSqlDatabase1_properties_typeProperties_database": {
+			"value": "rs_db"
+		},
+		"AzureSqlDatabase1_properties_typeProperties_userName": {
+			"value": "venky"
+		},
+		"ls__hs_keyvalue_properties_typeProperties_baseUrl": {
+			"value": "https://rvk.vault.azure.net/"
+		},
+		"ls_data_link_properties_typeProperties_url": {
+			"value": "https://rssource.dfs.core.windows.net/"
+		},
+		"ls_dl_zipfile_properties_typeProperties_url": {
+			"value": "https://rssource.dfs.core.windows.net/"
+		},
+		"ls_hd_storageaccount_properties_typeProperties_url": {
+			"value": "https://hdcluserstorage.dfs.core.windows.net/"
+		},
+		"ls_http_fetch_properties_typeProperties_url": {
+			"value": "@{linkedService().ls_basepath}"
+		},
+		"ls_rest_properties_typeProperties_url": {
+			"value": "https://pokeapi.co/api/v2/pokemon"
+		}
+	}
+}
