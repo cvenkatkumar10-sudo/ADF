@@ -1,0 +1,19 @@
+{
+	"name": "ls_hd_storageaccount",
+	"type": "Microsoft.DataFactory/factories/linkedservices",
+	"properties": {
+		"annotations": [],
+		"type": "AzureBlobFS",
+		"typeProperties": {
+			"url": "https://hdcluserstorage.dfs.core.windows.net/",
+			"accountKey": {
+				"type": "AzureKeyVaultSecret",
+				"store": {
+					"referenceName": "ls__hs_keyvalue",
+					"type": "LinkedServiceReference"
+				},
+				"secretName": "hd-storeage-key"
+			}
+		}
+	}
+}

@@ -1,0 +1,102 @@
+{
+	"name": "df_transform",
+	"properties": {
+		"folder": {
+			"name": "Old project"
+		},
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "dscsv",
+						"type": "DatasetReference"
+					},
+					"name": "dsdata"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "DelimitedText1",
+						"type": "DatasetReference"
+					},
+					"name": "sink1"
+				}
+			],
+			"transformations": [
+				{
+					"name": "filter"
+				},
+				{
+					"name": "select1"
+				},
+				{
+					"name": "pivot1"
+				},
+				{
+					"name": "derivedColumn1"
+				},
+				{
+					"name": "MapDrifted1",
+					"description": "Creates an explicit mapping for each drifted column"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          country as string,",
+				"          country_code as string,",
+				"          continent as string,",
+				"          population as integer,",
+				"          indicator as string,",
+				"          daily_count as short,",
+				"          date as date,",
+				"          rate_14_day as double,",
+				"          source as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     inferDriftedColumnTypes: true,",
+				"     ignoreNoFilesFound: false) ~> dsdata",
+				"dsdata filter(continent == 'Asia' && not(isNull(country_code))) ~> filter",
+				"filter select(mapColumn(",
+				"          country,",
+				"          country_code,",
+				"          population,",
+				"          indicator,",
+				"          daily_count,",
+				"          source,",
+				"          each(match(type=='date'),",
+				"               'reported_'+$$ = $$)",
+				"     ),",
+				"     skipDuplicateMapInputs: false,",
+				"     skipDuplicateMapOutputs: false) ~> select1",
+				"derivedColumn1 pivot(groupBy({country (code)},",
+				"          reported_date,",
+				"          source),",
+				"     pivotBy(indicator),",
+				"     count = sum(daily_count),",
+				"     columnNaming: '$N$V',",
+				"     lateral: true) ~> pivot1",
+				"select1 derive({country (code)} = country +'('+country_code+')') ~> derivedColumn1",
+				"pivot1 derive({countconfirmed cases} = toLong(byName('countconfirmed cases')),",
+				"          countdeaths = toLong(byName('countdeaths'))) ~> MapDrifted1",
+				"MapDrifted1 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          Column_1 as string,",
+				"          Column_2 as string,",
+				"          Column_3 as string,",
+				"          Column_4 as string,",
+				"          Column_5 as string,",
+				"          Column_6 as string,",
+				"          Column_7 as string",
+				"     ),",
+				"     umask: 0022,",
+				"     preCommands: [],",
+				"     postCommands: [],",
+				"     saveOrder: 1) ~> sink1"
+			]
+		}
+	}
+}

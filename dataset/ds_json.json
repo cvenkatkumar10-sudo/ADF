@@ -1,0 +1,37 @@
+{
+	"name": "ds_json",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "ls_data_link",
+			"type": "LinkedServiceReference"
+		},
+		"folder": {
+			"name": "Old Project"
+		},
+		"annotations": [],
+		"type": "Json",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"fileName": "Note3.json",
+				"folderPath": "monitor",
+				"fileSystem": "source"
+			}
+		},
+		"schema": {
+			"type": "object",
+			"properties": {
+				"sourceBaseURL": {
+					"type": "string"
+				},
+				"sourceRelativeURL": {
+					"type": "string"
+				},
+				"sinkFileName": {
+					"type": "string"
+				}
+			}
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

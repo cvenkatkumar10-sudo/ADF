@@ -1,0 +1,179 @@
+{
+	"name": "dt_hospitaldata",
+	"properties": {
+		"folder": {
+			"name": "Old project"
+		},
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "DelimitedText2",
+						"type": "DatasetReference"
+					},
+					"name": "source1"
+				},
+				{
+					"dataset": {
+						"referenceName": "DelimitedText3",
+						"type": "DatasetReference"
+					},
+					"name": "source2"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "DelimitedText1",
+						"type": "DatasetReference"
+					},
+					"name": "sink1"
+				},
+				{
+					"dataset": {
+						"referenceName": "DelimitedText1",
+						"type": "DatasetReference"
+					},
+					"name": "sink2"
+				}
+			],
+			"transformations": [
+				{
+					"name": "select1"
+				},
+				{
+					"name": "split1"
+				},
+				{
+					"name": "pivot1"
+				},
+				{
+					"name": "MapDrifted1",
+					"description": "Creates an explicit mapping for each drifted column"
+				},
+				{
+					"name": "lookup1"
+				},
+				{
+					"name": "derivedColumn1"
+				},
+				{
+					"name": "pivot2"
+				},
+				{
+					"name": "MapDrifted2",
+					"description": "Creates an explicit mapping for each drifted column"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          country as string,",
+				"          indicator as string,",
+				"          date as date,",
+				"          year_week as string,",
+				"          value as double,",
+				"          source as string,",
+				"          url as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     inferDriftedColumnTypes: true,",
+				"     limit: 1000,",
+				"     ignoreNoFilesFound: false,",
+				"     skipLines: 1) ~> source1",
+				"source(output(",
+				"          date_key as string,",
+				"          date as string,",
+				"          year as string,",
+				"          month as string,",
+				"          day as string,",
+				"          day_name as string,",
+				"          day_of_year as string,",
+				"          week_of_month as string,",
+				"          week_of_year as string,",
+				"          month_name as string,",
+				"          year_month as string,",
+				"          year_week as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     inferDriftedColumnTypes: true,",
+				"     ignoreNoFilesFound: false) ~> source2",
+				"source1 select(mapColumn(",
+				"          country,",
+				"          indicator,",
+				"          year_week,",
+				"          value,",
+				"          source,",
+				"          each(match(type=='date'),",
+				"               'reported_'+$$ = $$)",
+				"     ),",
+				"     skipDuplicateMapInputs: false,",
+				"     skipDuplicateMapOutputs: false) ~> select1",
+				"select1 split(regexMatch(indicator, 'Daily'),",
+				"     disjoint: false) ~> split1@(DailyData, WeeklyData)",
+				"split1@DailyData pivot(groupBy(country,",
+				"          reported_date,",
+				"          source),",
+				"     pivotBy(indicator),",
+				"     Exepens = sum(value),",
+				"     columnNaming: '$N$V',",
+				"     lateral: true) ~> pivot1",
+				"pivot1 derive({ExepensDaily ICU occupancy} = toDouble(byName('ExepensDaily ICU occupancy')),",
+				"          {ExepensDaily hospital occupancy} = toDouble(byName('ExepensDaily hospital occupancy')),",
+				"          country = country,",
+				"          reported_date = reported_date,",
+				"          source = source) ~> MapDrifted1",
+				"split1@WeeklyData, derivedColumn1 lookup(split1@WeeklyData@year_week == yearweek,",
+				"     multiple: false,",
+				"     pickup: 'any',",
+				"     broadcast: 'auto')~> lookup1",
+				"source2 derive(yearweek = year+'-W'+right('0'+week_of_year,2)) ~> derivedColumn1",
+				"lookup1 pivot(groupBy(country,",
+				"          split1@WeeklyData@year_week,",
+				"          source),",
+				"     pivotBy(indicator),",
+				"     Value = sum(value),",
+				"     columnNaming: '$N$V',",
+				"     lateral: true) ~> pivot2",
+				"pivot2 derive({ValueWeekly new hospital admissions per 100k} = toDouble(byName('ValueWeekly new hospital admissions per 100k')),",
+				"          country = country,",
+				"          year_week = year_week,",
+				"          source = toString(source)) ~> MapDrifted2",
+				"MapDrifted1 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          Column_1 as string,",
+				"          Column_2 as string,",
+				"          Column_3 as string,",
+				"          Column_4 as string,",
+				"          Column_5 as string,",
+				"          Column_6 as string,",
+				"          Column_7 as string",
+				"     ),",
+				"     umask: 0022,",
+				"     preCommands: [],",
+				"     postCommands: [],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> sink1",
+				"MapDrifted2 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          Column_1 as string,",
+				"          Column_2 as string,",
+				"          Column_3 as string,",
+				"          Column_4 as string,",
+				"          Column_5 as string,",
+				"          Column_6 as string,",
+				"          Column_7 as string",
+				"     ),",
+				"     umask: 0022,",
+				"     preCommands: [],",
+				"     postCommands: [],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> sink2"
+			]
+		}
+	}
+}

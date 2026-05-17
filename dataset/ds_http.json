@@ -1,0 +1,43 @@
+{
+	"name": "ds_http",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "ls_http_fetch",
+			"type": "LinkedServiceReference",
+			"parameters": {
+				"ls_basepath": {
+					"value": "@dataset().ds_basepath",
+					"type": "Expression"
+				}
+			}
+		},
+		"parameters": {
+			"ds_path": {
+				"type": "String"
+			},
+			"ds_basepath": {
+				"type": "string"
+			}
+		},
+		"folder": {
+			"name": "Old Project"
+		},
+		"annotations": [],
+		"type": "DelimitedText",
+		"typeProperties": {
+			"location": {
+				"type": "HttpServerLocation",
+				"relativeUrl": {
+					"value": "@dataset().ds_path",
+					"type": "Expression"
+				}
+			},
+			"columnDelimiter": ",",
+			"escapeChar": "\\",
+			"firstRowAsHeader": false,
+			"quoteChar": "\""
+		},
+		"schema": []
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

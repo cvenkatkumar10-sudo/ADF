@@ -1,0 +1,38 @@
+{
+	"name": "ds_csv_datafrom_hd",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "ls_data_link",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"Destinition": {
+				"type": "string"
+			},
+			"FileName": {
+				"type": "string"
+			}
+		},
+		"annotations": [],
+		"type": "DelimitedText",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"fileName": {
+					"value": "@dataset().FileName",
+					"type": "Expression"
+				},
+				"fileSystem": {
+					"value": "@dataset().Destinition",
+					"type": "Expression"
+				}
+			},
+			"columnDelimiter": ",",
+			"escapeChar": "\\",
+			"firstRowAsHeader": true,
+			"quoteChar": "\""
+		},
+		"schema": []
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

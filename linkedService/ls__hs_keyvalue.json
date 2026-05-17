@@ -1,0 +1,11 @@
+{
+	"name": "ls__hs_keyvalue",
+	"type": "Microsoft.DataFactory/factories/linkedservices",
+	"properties": {
+		"annotations": [],
+		"type": "AzureKeyVault",
+		"typeProperties": {
+			"baseUrl": "https://rvk.vault.azure.net/"
+		}
+	}
+}

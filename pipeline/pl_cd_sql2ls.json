@@ -1,0 +1,322 @@
+{
+	"name": "pl_cd_sql2ls",
+	"properties": {
+		"activities": [
+			{
+				"name": "ds_lookup_in_json",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.00:10:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "JsonSource",
+						"storeSettings": {
+							"type": "AzureBlobFSReadSettings",
+							"recursive": true,
+							"enablePartitionDiscovery": false
+						},
+						"formatSettings": {
+							"type": "JsonReadSettings"
+						}
+					},
+					"dataset": {
+						"referenceName": "ds_jsonfetch",
+						"type": "DatasetReference",
+						"parameters": {
+							"container": {
+								"value": "@pipeline().parameters.para_s_con",
+								"type": "Expression"
+							},
+							"folder": {
+								"value": "@pipeline().parameters.para_s_fol",
+								"type": "Expression"
+							},
+							"file": {
+								"value": "@pipeline().parameters.para_s_file",
+								"type": "Expression"
+							}
+						}
+					},
+					"firstRowOnly": false
+				}
+			},
+			{
+				"name": "SqlLookData",
+				"type": "Script",
+				"dependsOn": [
+					{
+						"activity": "ds_lookup_in_json",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.00:10:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"linkedServiceName": {
+					"referenceName": "AzureSqlDatabase1",
+					"type": "LinkedServiceReference"
+				},
+				"typeProperties": {
+					"scripts": [
+						{
+							"type": "Query",
+							"text": {
+								"value": "SELECT count(1) cnt\nFROM @{pipeline().parameters.para_table}\nWHERE lastupdated_timestamp > '@{activity('ds_lookup_in_json').output.value[0].cdc_timestamp}'",
+								"type": "Expression"
+							}
+						}
+					],
+					"scriptBlockExecutionTimeout": "02:00:00"
+				}
+			},
+			{
+				"name": "CheckDataExists",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "SqlLookData",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@greater(activity('SqlLookData').output.resultSets[0].rows[0].cnt,0)",
+						"type": "Expression"
+					},
+					"ifTrueActivities": [
+						{
+							"name": "ds_copysqltosink",
+							"type": "Copy",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "AzureSqlSource",
+									"sqlReaderQuery": {
+										"value": "SELECT * \nFROM @{pipeline().parameters.para_table}\nWHERE lastupdated_timestamp>'@{activity('ds_lookup_in_json').output.value[0].cdc_timestamp}'",
+										"type": "Expression"
+									},
+									"queryTimeout": "02:00:00",
+									"partitionOption": "None"
+								},
+								"sink": {
+									"type": "DelimitedTextSink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings",
+										"copyBehavior": "FlattenHierarchy"
+									},
+									"formatSettings": {
+										"type": "DelimitedTextWriteSettings",
+										"quoteAllText": true,
+										"fileExtension": ".txt"
+									}
+								},
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": false
+									}
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "AzureSqlTable1",
+									"type": "DatasetReference",
+									"parameters": {
+										"schema": "dbo",
+										"table": {
+											"value": "@pipeline().parameters.para_table",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "ds_csv_datafrom_hd",
+									"type": "DatasetReference",
+									"parameters": {
+										"Destinition": {
+											"value": "@pipeline().parameters.para_t_sink",
+											"type": "Expression"
+										},
+										"FileName": {
+											"value": "@pipeline().parameters.para_table",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						},
+						{
+							"name": "CheckMax",
+							"type": "Script",
+							"dependsOn": [
+								{
+									"activity": "ds_copysqltosink",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"linkedServiceName": {
+								"referenceName": "AzureSqlDatabase1",
+								"type": "LinkedServiceReference"
+							},
+							"typeProperties": {
+								"scripts": [
+									{
+										"type": "Query",
+										"text": {
+											"value": "SELECT MAX(lastupdated_timestamp) maxdate\nFROM @{pipeline().parameters.para_table}\n",
+											"type": "Expression"
+										}
+									}
+								],
+								"scriptBlockExecutionTimeout": "02:00:00"
+							}
+						},
+						{
+							"name": "updatedata",
+							"type": "Copy",
+							"state": "Inactive",
+							"onInactiveMarkAs": "Succeeded",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "JsonSource",
+									"additionalColumns": [
+										{
+											"name": "cdc",
+											"value": {
+												"value": "@activity('CheckMax').output.resultSets[0].rows[0].maxdate",
+												"type": "Expression"
+											}
+										}
+									],
+									"storeSettings": {
+										"type": "AzureBlobFSReadSettings",
+										"recursive": true,
+										"enablePartitionDiscovery": false
+									},
+									"formatSettings": {
+										"type": "JsonReadSettings"
+									}
+								},
+								"sink": {
+									"type": "JsonSink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings",
+										"copyBehavior": "FlattenHierarchy"
+									},
+									"formatSettings": {
+										"type": "JsonWriteSettings"
+									}
+								},
+								"enableStaging": false
+							},
+							"inputs": [
+								{
+									"referenceName": "ds_jsonfetch",
+									"type": "DatasetReference",
+									"parameters": {
+										"container": {
+											"value": "@pipeline().parameters.para_s_con",
+											"type": "Expression"
+										},
+										"folder": {
+											"value": "@pipeline().parameters.para_s_file",
+											"type": "Expression"
+										},
+										"file": {
+											"value": "@pipeline().parameters.para_s_file2",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "Json1",
+									"type": "DatasetReference"
+								}
+							]
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"para_s_con": {
+				"type": "string",
+				"defaultValue": "datasource"
+			},
+			"para_s_file": {
+				"type": "string",
+				"defaultValue": "cdc_timestampe.json"
+			},
+			"para_s_fol": {
+				"type": "string",
+				"defaultValue": "etldata"
+			},
+			"para_table": {
+				"type": "string",
+				"defaultValue": "orders"
+			},
+			"para_t_sink": {
+				"type": "string",
+				"defaultValue": "sink"
+			},
+			"para_s_file2": {
+				"type": "string",
+				"defaultValue": "casesjson.json"
+			}
+		},
+		"annotations": [],
+		"lastPublishTime": "2026-05-16T20:04:29Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}
